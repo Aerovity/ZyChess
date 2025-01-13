@@ -1,15 +1,20 @@
 import pygame 
 from pathlib import Path
 from PIL import Image
-# Window
+import time
+from Timer import smallClock
+# Window setup
 pygame.init()
+pygame.mixer.init()
+#Sound effect
+moveSelfSound = pygame.mixer.Sound("SoundEffects/move-self.mp3")
+captureSound = pygame.mixer.Sound("SoundEffects/capture.mp3")
 screen = pygame.display.set_mode((800, 600))
 run = True
 pygame.display.set_caption("ZyChess")
 castleMoveWhite = True
 castleMoveBlack = True
 #piece movements1
-    
 def Pion(x1, y1, x2, y2, White, board):
     if White:
         # Move forward by one square
@@ -249,11 +254,20 @@ class Piece:
 
     def draw(self, screen, x, y):
         screen.blit(self.image, (x, y))
-
 image = Image.open("benz.png")
 resized_image = image.resize((410, 410))
 resized_image.save("resized_example.png")
 bg_image = pygame.image.load("resized_example.png")
+#custom cursor:
+custom_cursor1 = pygame.image.load("MouseSprites/regularMouse.png").convert_alpha()
+custom_cursor2 = pygame.image.load("MouseSprites/mouseWithWhite.png").convert_alpha()
+custom_cursor3 = pygame.image.load("MouseSprites/mouseWithBlack.png").convert_alpha()
+#Menu Image:
+menu_image = pygame.image.load("Menu/Player2 Menu.png").convert_alpha()
+menu_Block = pygame.image.load("Menu/menuCube.png").convert_alpha()
+menu_Block2 = pygame.image.load("Menu/menuBlock3.png").convert_alpha()
+#Clock
+clock_image = pygame.image.load("Clock/Clock.png").convert_alpha()
 
 # Initialisation of Object (Pieces)
 assets = [Path("Black Pieces"), Path("White Pieces")]
@@ -297,11 +311,30 @@ for i in range(8): #hitBox
     line =[]
  #replay of the game
 turn = 1
+TimerBlack = smallClock(600)
+TimerWhite = smallClock(600)
 logs = [] #logs of the game(mouse)
  #   #the action that it is being recorded
 # Main game loop
 '''Game loop HERE!!!!!!!!!!!!!!!!'''
 while run:
+    is_white = turn % 2 != 0
+    #timer:
+    #Black timer
+    if is_white:
+        SignalBlack = is_white
+        TimerBlack.continueTimer(SignalBlack)
+        timeBlack = TimerBlack.getTime()
+        clock_1digit = pygame.image.load(f"Clock/Nums/{timeBlack[0]}.png").convert_alpha()
+        clock_2digit = pygame.image.load(f"Clock/Nums/{timeBlack[1]}.png").convert_alpha()
+        clock_3digit = pygame.image.load(f"Clock/Nums/{timeBlack[2]}.png").convert_alpha()
+        clock_4digit = pygame.image.load(f"Clock/Nums/{timeBlack[3]}.png").convert_alpha()
+    else:
+        SignalWhite = is_white
+        TimerWhite.continueTimer(SignalWhite)
+        timeWhite = TimerWhite.getTime()
+    #Clock:
+    
     #Event Handler 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -337,7 +370,15 @@ while run:
                 break
     is_white = turn % 2 != 0 #white turn or black turn
     is_Check = is_king_in_check(PLATEAU, king_position, is_white)
-    
+    #cursor change
+    # Hide the default cursor
+    pygame.mouse.set_visible(False)
+    custom_cursor = custom_cursor1
+    if len(logs) == 1: #if hand is full for mouse
+        if is_white:
+            custom_cursor = custom_cursor2
+        else:
+            custom_cursor = custom_cursor3
     #check and give the movement of the piece:
     if len(logs) == 2:#if the logs are full
         notBlocked = NotBlocked(logs[0][1], logs[0][0], logs[1][1], logs[1][0], PLATEAU)
@@ -410,6 +451,7 @@ while run:
                         break
             if not is_king_in_check(PLATEAU, king_position, is_white):
                 # Move is valid
+                moveSelfSound.play()
                 turn += 1
                 logs = []
             else:
@@ -448,18 +490,32 @@ while run:
     x = 0
     y = 13
     #board display:
-    #screen.blit(0, (0, 0))
-    #plateau display
-    for i in PLATEAU:
-        x=23.8+10
-        for j in i:
-            if isinstance(j, Piece):
-                j.draw(screen, x, y)
-                x+=32+15
+    screen.blit(bg_image, (0, 0))
+    screen.blit(menu_image, (410,0))
+    screen.blit(menu_Block, (410, 262))
+    screen.blit(menu_Block2, (0, 411))
+    #clock display for opponent:
+    screen.blit(clock_image, (600, 165))
+    screen.blit(clock_1digit, (613, 178))
+    screen.blit(clock_2digit, (645, 178))
+    screen.blit(clock_3digit, (706, 178))
+    screen.blit(clock_4digit, (738, 178))
+    #plateau display:
+    #0 if is_white else len(PLATEAU) - 1, len(PLATEAU) if is_white else -1, playerDisplay
+    playerDisplay = 1 if turn % 2 != 0 else -1
+    for i in range(len(PLATEAU)):
+        x=24+12
+        for j in range(len(PLATEAU[i])):
+            if isinstance(PLATEAU[i][j], Piece):
+                PLATEAU[i][j].draw(screen, x, y)
+                x+=32+14
             else:
-                x+=32+15
-        y+=47    
+                x+=32+14
+        y+=46    
     
+    # Draw the custom cursor
+    mouse_pos = pygame.mouse.get_pos()
+    screen.blit(custom_cursor, (mouse_pos[0], mouse_pos[1]))
     pygame.display.update()
     pygame.display.flip()
 
