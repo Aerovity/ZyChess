@@ -1,8 +1,7 @@
 import pygame 
 from pathlib import Path
 from PIL import Image
-import time
-from Timer import smallClock
+from datetime import datetime
 # Window setup
 pygame.init()
 pygame.mixer.init()
@@ -105,7 +104,6 @@ def NotBlocked(x1, y1, x2, y2, board):
             x += dx
             y += dy
     return True
-
 #If Check method:
 def is_king_in_check(board, king_position, is_white):
     enemy_pieces = pieces_of_black if is_white else pieces_of_white
@@ -268,7 +266,21 @@ menu_Block = pygame.image.load("Menu/menuCube.png").convert_alpha()
 menu_Block2 = pygame.image.load("Menu/menuBlock3.png").convert_alpha()
 #Clock
 clock_image = pygame.image.load("Clock/Clock.png").convert_alpha()
-
+clock_image2 = pygame.image.load("Clock/Clock.png").convert_alpha()
+#Lawliet Animation
+Lawliet = Image.open("Perso/Lawliet.gif")
+Lawlietbg = pygame.image.load("Perso/Lawlietbkg.png").convert_alpha()
+# Extract frames from the GIF
+frames = []
+try:
+    while True:
+        frame = pygame.image.fromstring(Lawliet.tobytes(), Lawliet.size, Lawliet.mode)
+        frames.append(frame)
+        Lawliet.seek(Lawliet.tell() + 1)
+except EOFError:
+    pass  # All frames extracted
+clock = pygame.time.Clock()
+frame_index = 0
 # Initialisation of Object (Pieces)
 assets = [Path("Black Pieces"), Path("White Pieces")]
 pieces_of_white = []
@@ -311,8 +323,13 @@ for i in range(8): #hitBox
     line =[]
  #replay of the game
 turn = 1
-TimerBlack = smallClock(600)
-TimerWhite = smallClock(600)
+initialTimeBlack = datetime.now().strftime("%S")
+initialTimeWhite = datetime.now().strftime("%S")
+currentTimeBlack = 600
+CurrentTimeWhite = 600
+timeBlack = "0001"
+timeWhite = "0001"
+clock = pygame.time.Clock()
 logs = [] #logs of the game(mouse)
  #   #the action that it is being recorded
 # Main game loop
@@ -321,21 +338,41 @@ while run:
     is_white = turn % 2 != 0
     #timer:
     #Black timer
+    if not is_white:
+        tempTime = datetime.now().strftime("%S")
+        if tempTime != initialTimeBlack:
+            currentTimeBlack -= 1
+            initialTimeBlack = tempTime
+            minutes = str(currentTimeBlack // 60)
+            seconds = str(currentTimeBlack % 60)
+            if len(minutes) == 1:
+                minutes = "0" + minutes
+            if len(seconds) == 1:
+                seconds = "0" + seconds
+            timeBlack = minutes + seconds
     if is_white:
-        SignalBlack = is_white
-        TimerBlack.continueTimer(SignalBlack)
-        timeBlack = TimerBlack.getTime()
-        clock_1digit = pygame.image.load(f"Clock/Nums/{timeBlack[0]}.png").convert_alpha()
-        clock_2digit = pygame.image.load(f"Clock/Nums/{timeBlack[1]}.png").convert_alpha()
-        clock_3digit = pygame.image.load(f"Clock/Nums/{timeBlack[2]}.png").convert_alpha()
-        clock_4digit = pygame.image.load(f"Clock/Nums/{timeBlack[3]}.png").convert_alpha()
-    else:
-        SignalWhite = is_white
-        TimerWhite.continueTimer(SignalWhite)
-        timeWhite = TimerWhite.getTime()
-    #Clock:
-    
-    #Event Handler 
+        tempTime = datetime.now().strftime("%S")
+        if tempTime != initialTimeWhite:
+            CurrentTimeWhite -= 1
+            initialTimeWhite = tempTime
+            minutes = str(CurrentTimeWhite // 60)
+            seconds = str(CurrentTimeWhite % 60)
+            if len(minutes) == 1:
+                minutes = "0" + minutes
+            if len(seconds) == 1:
+                seconds = "0" + seconds
+            timeWhite = minutes + seconds
+    # Black Clock Display 
+    clock_1digit = pygame.image.load(f"Clock/Nums/{timeBlack[0]}.png").convert_alpha()
+    clock_2digit = pygame.image.load(f"Clock/Nums/{timeBlack[1]}.png").convert_alpha()
+    clock_3digit = pygame.image.load(f"Clock/Nums/{timeBlack[2]}.png").convert_alpha()
+    clock_4digit = pygame.image.load(f"Clock/Nums/{timeBlack[3]}.png").convert_alpha()
+    # White timer
+    clock_1digitw = pygame.image.load(f"Clock/Nums/{timeWhite[0]}.png").convert_alpha()
+    clock_2digitw = pygame.image.load(f"Clock/Nums/{timeWhite[1]}.png").convert_alpha()
+    clock_3digitw = pygame.image.load(f"Clock/Nums/{timeWhite[2]}.png").convert_alpha()
+    clock_4digitw = pygame.image.load(f"Clock/Nums/{timeWhite[3]}.png").convert_alpha()
+    #Event Handler
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
@@ -479,7 +516,9 @@ while run:
             
         if PLATEAU[7][i] == pieces_of_white[3]:
    '''         
-    
+    if timeBlack == "0000" or timeWhite == "0000":
+        print("Time's up!")
+        run = False
     # Clear the screenz 
     screen.fill((0, 0, 0))
     # Redraw the background
@@ -496,10 +535,18 @@ while run:
     screen.blit(menu_Block2, (0, 411))
     #clock display for opponent:
     screen.blit(clock_image, (600, 165))
+    screen.blit(clock_image2, (178, 418))
     screen.blit(clock_1digit, (613, 178))
     screen.blit(clock_2digit, (645, 178))
     screen.blit(clock_3digit, (706, 178))
     screen.blit(clock_4digit, (738, 178))
+    #clock display for player:
+    screen.blit(clock_1digitw, (190, 431))
+    screen.blit(clock_2digitw, (222, 431))
+    screen.blit(clock_3digitw, (283, 431))
+    screen.blit(clock_4digitw, (315, 431))
+    #Lawliet animation
+    screen.blit(frames[frame_index], (417, 6))
     #plateau display:
     #0 if is_white else len(PLATEAU) - 1, len(PLATEAU) if is_white else -1, playerDisplay
     playerDisplay = 1 if turn % 2 != 0 else -1
@@ -511,12 +558,15 @@ while run:
                 x+=32+14
             else:
                 x+=32+14
-        y+=46    
-    
+        y+=46
+    #pygame.display.update() 
+    if frame_index == 0:
+        screen.blit(Lawlietbg, (417, 6))   
+    frame_index = (frame_index + 1) % len(frames) if clock.tick(120) % 2 == 0 else frame_index
     # Draw the custom cursor
     mouse_pos = pygame.mouse.get_pos()
     screen.blit(custom_cursor, (mouse_pos[0], mouse_pos[1]))
     pygame.display.update()
     pygame.display.flip()
-
+    clock.tick(120)
 pygame.quit()
