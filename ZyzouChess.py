@@ -6,6 +6,8 @@ from datetime import datetime
 pygame.init()
 pygame.mixer.init()
 #Sound effect
+PixelFont = pygame.font.Font("minecraftia/Minecraftia-Regular.ttf", 16)
+PixelFont1 = pygame.font.Font("minecraftia/Minecraftia-Regular.ttf", 12)
 moveSelfSound = pygame.mixer.Sound("SoundEffects/move-self.mp3")
 captureSound = pygame.mixer.Sound("SoundEffects/capture.mp3")
 screen = pygame.display.set_mode((800, 600))
@@ -270,8 +272,19 @@ clock_image2 = pygame.image.load("Clock/Clock.png").convert_alpha()
 #Lawliet Animation
 Lawliet = Image.open("Perso/Lawliet.gif")
 Lawlietbg = pygame.image.load("Perso/Lawlietbkg.png").convert_alpha()
+chessgame = pygame.image.load("Perso/Lawliet1.png").convert_alpha()
+Light = pygame.image.load("Perso/Lightpfp1.png").convert_alpha()
+Light1 = Image.open("Perso/Lightpfp.gif")
+#Text Display
+NameOfLawliet = PixelFont.render("L - Lawliet", True, (255, 255, 255))
+Description = PixelFont1.render("Description: 2100 Elo", True, (238, 208, 179))
+Description2 = PixelFont1.render("Known as #1 Detective", True, (238, 208, 179))
+NameOfLight = PixelFont.render("Kira - Light Yamgami", True, (255, 255, 255))
+DescriptionLight = PixelFont1.render("Description: 2200 Elo", True, (238, 208, 179))
+Description2Light = PixelFont1.render("\"Him\"", True, (238, 208, 179))
 # Extract frames from the GIF
 frames = []
+frameslight = []
 try:
     while True:
         frame = pygame.image.fromstring(Lawliet.tobytes(), Lawliet.size, Lawliet.mode)
@@ -279,8 +292,18 @@ try:
         Lawliet.seek(Lawliet.tell() + 1)
 except EOFError:
     pass  # All frames extracted
+try:
+    while True:
+        frame = pygame.image.fromstring(Light1.tobytes(), Light1.size, Light1.mode)
+        frameslight.append(frame)
+        Light1.seek(Light1.tell() + 1)
+except EOFError:
+    pass
 clock = pygame.time.Clock()
+last_frame_update_time = pygame.time.get_ticks()
 frame_index = 0
+last_frame_update_time2 = pygame.time.get_ticks()
+frame_index2 = 0
 # Initialisation of Object (Pieces)
 assets = [Path("Black Pieces"), Path("White Pieces")]
 pieces_of_white = []
@@ -510,12 +533,6 @@ while run:
         print("Stalemate!")
         run = False
     #Checking for promotion
-    '''
-    for i in range(8):
-        if PLATEAU[0][i] == pieces_of_black[3]:
-            
-        if PLATEAU[7][i] == pieces_of_white[3]:
-   '''         
     if timeBlack == "0000" or timeWhite == "0000":
         print("Time's up!")
         run = False
@@ -540,13 +557,21 @@ while run:
     screen.blit(clock_2digit, (645, 178))
     screen.blit(clock_3digit, (706, 178))
     screen.blit(clock_4digit, (738, 178))
+    screen.blit(NameOfLawliet, (417, 159))
+    screen.blit(Description, (417, 180))
+    screen.blit(Description2, (417, 197))
+    screen.blit(NameOfLight, (178, 511))
+    screen.blit(DescriptionLight, (178, 532))
+    screen.blit(Description2Light, (178, 549))
     #clock display for player:
     screen.blit(clock_1digitw, (190, 431))
     screen.blit(clock_2digitw, (222, 431))
     screen.blit(clock_3digitw, (283, 431))
     screen.blit(clock_4digitw, (315, 431))
+    screen.blit(chessgame, (410, 262))
     #Lawliet animation
     screen.blit(frames[frame_index], (417, 6))
+    screen.blit(frameslight[frame_index2], (6, 418))
     #plateau display:
     #0 if is_white else len(PLATEAU) - 1, len(PLATEAU) if is_white else -1, playerDisplay
     playerDisplay = 1 if turn % 2 != 0 else -1
@@ -561,8 +586,19 @@ while run:
         y+=46
     #pygame.display.update() 
     if frame_index == 0:
-        screen.blit(Lawlietbg, (417, 6))   
-    frame_index = (frame_index + 1) % len(frames) if clock.tick(120) % 2 == 0 else frame_index
+        screen.blit(Lawlietbg, (417, 6))
+    if frame_index2 == 0:
+        screen.blit(Light, (6, 418))
+    current_time = pygame.time.get_ticks()
+    if current_time - last_frame_update_time >= 200:
+        frame_index = (frame_index + 1) % 120
+        frame_index2 = (frame_index2 + 1) % 120
+        last_frame_update_time = current_time
+        last_frame_update_time2 = current_time
+        if frame_index == 18:
+            frame_index = 0
+        if frame_index2 == 24:
+            frame_index2 = 0
     # Draw the custom cursor
     mouse_pos = pygame.mouse.get_pos()
     screen.blit(custom_cursor, (mouse_pos[0], mouse_pos[1]))
