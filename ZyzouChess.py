@@ -6,8 +6,12 @@ from datetime import datetime
 pygame.init()
 pygame.mixer.init()
 #Sound effect
+icon = pygame.image.load("Horse.png")
+pygame.display.set_icon(icon)
 PixelFont = pygame.font.Font("minecraftia/Minecraftia-Regular.ttf", 16)
 PixelFont1 = pygame.font.Font("minecraftia/Minecraftia-Regular.ttf", 12)
+PixelFont2 = pygame.font.Font("minecraftia/Minecraftia-Regular.ttf", 8)
+chessFont = pygame.font.SysFont("DejaVuSans", 6)
 moveSelfSound = pygame.mixer.Sound("SoundEffects/move-self.mp3")
 captureSound = pygame.mixer.Sound("SoundEffects/capture.mp3")
 screen = pygame.display.set_mode((800, 600))
@@ -15,6 +19,12 @@ run = True
 pygame.display.set_caption("ZyChess")
 castleMoveWhite = True
 castleMoveBlack = True
+#History of moves and the board
+HistoryImage = pygame.image.load("Menu/History.png").convert_alpha()
+History = []
+pieceMovedForHistory = []
+xHisto = 388
+yHisto = 520
 #piece movements1
 def Pion(x1, y1, x2, y2, White, board):
     if White:
@@ -362,6 +372,7 @@ while run:
     #timer:
     #Black timer
     if not is_white:
+        
         tempTime = datetime.now().strftime("%S")
         if tempTime != initialTimeBlack:
             currentTimeBlack -= 1
@@ -513,7 +524,21 @@ while run:
                 # Move is valid
                 moveSelfSound.play()
                 turn += 1
+                History.append(f"{LOCALISATIONX[logs[0][1]]}{LOCALISATIONY[logs[0][0]]} -> {LOCALISATIONX[newPosition[1]]}{LOCALISATIONY[newPosition[0]]}")
+                if PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_white[0] or PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_black[0]:
+                    pieceMovedForHistory.append("♝")
+                if PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_white[1] or PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_black[1]:
+                    pieceMovedForHistory.append("♚")
+                if PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_white[2] or PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_black[2]:
+                    pieceMovedForHistory.append("♞")
+                if PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_white[3] or PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_black[3]:
+                    pieceMovedForHistory.append("♟")
+                if PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_white[4] or PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_black[4]:
+                    pieceMovedForHistory.append("♛")
+                if PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_white[5] or PLATEAU[logs[1][1]][logs[1][0]] == pieces_of_black[5]:
+                    pieceMovedForHistory.append("♜")
                 logs = []
+                print(pieceMovedForHistory)
             else:
                 # Undo move
                 PLATEAU[logs[0][0]][logs[0][1]] = PLATEAU[newPosition[0]][newPosition[1]]
@@ -569,6 +594,7 @@ while run:
     screen.blit(clock_3digitw, (283, 431))
     screen.blit(clock_4digitw, (315, 431))
     screen.blit(chessgame, (410, 262))
+    screen.blit(HistoryImage, (379, 420))
     #Lawliet animation
     screen.blit(frames[frame_index], (417, 6))
     screen.blit(frameslight[frame_index2], (6, 418))
@@ -599,6 +625,20 @@ while run:
             frame_index = 0
         if frame_index2 == 24:
             frame_index2 = 0
+    xHisto, yHisto = 388, 430  # Set initial positions
+
+    for i in range(len(History)):
+        color = (238, 208, 179) if i % 2 == 0 else (143, 86, 59)
+        Text = PixelFont2.render(History[i]+", ", True, color)
+        if xHisto > 710:
+            xHisto = 388
+            yHisto += 12  # Keep spacing consistent
+
+        screen.blit(Text, (xHisto, yHisto))
+        xHisto += 50
+    #turn 
+    if is_white : pygame.draw.rect(screen, (150, 240, 60), (176, 509, 198, 84), 2) 
+    else: pygame.draw.rect(screen, (150, 240, 60), (414, 159, 172, 92), 2) 
     # Draw the custom cursor
     mouse_pos = pygame.mouse.get_pos()
     screen.blit(custom_cursor, (mouse_pos[0], mouse_pos[1]))
