@@ -147,33 +147,27 @@ def is_king_in_check(board, king_position, is_white):
 def is_checkmate(board, king_position, is_white):
     if not is_king_in_check(board, king_position, is_white):
         return False
+
     pieces = pieces_of_white if is_white else pieces_of_black
     for i in range(8):
         for j in range(8):
             piece = board[i][j]
             if piece in pieces:
-                # Generate all possible moves for this piece
-                possible_moves = generate_possible_moves(piece, i, j, board, is_white)
+                possible_moves = generate_possible_moves(piece, j, i, board, is_white)
                 for move in possible_moves:
                     new_x, new_y = move
-                    
-                    # Simulate the move
                     temp_piece = board[new_y][new_x]
                     board[new_y][new_x] = board[i][j]
                     board[i][j] = None
-                    
-                    # Check if the king is still in check after the move
-                    new_king_position = (new_y, new_x) if piece == pieces_of_white[1] or piece == pieces_of_black[1] else king_position
+
+                    new_king_position = (new_y, new_x) if piece in [pieces_of_white[1], pieces_of_black[1]] else king_position
                     if not is_king_in_check(board, new_king_position, is_white):
-                        # Undo the move
-                        
                         board[i][j] = board[new_y][new_x]
                         board[new_y][new_x] = temp_piece
                         return False
-                    
-                    # Undo the move
+
                     board[i][j] = board[new_y][new_x]
-                    board[new_y][new_x] = temp_piece 
+                    board[new_y][new_x] = temp_piece
     return True
 def generate_possible_moves(piece, x, y, board, is_white):
     possible_moves = []
@@ -184,23 +178,115 @@ def generate_possible_moves(piece, x, y, board, is_white):
             if target is None or (is_white and target in pieces_of_black) or (not is_white and target in pieces_of_white):
                 possible_moves.append((new_x, new_y))
 
-    if piece in [pieces_of_white[0], pieces_of_black[0]]:  # Pawn
+    if piece == pieces_of_white[3] or piece == pieces_of_black[3]:  # Pawn
         direction = -1 if is_white else 1
-        # Single forward move
-        if board[y + direction][x] is None:
-            add_move_if_valid(x, y + direction)
-            # Double forward move
-            if (y == 6 and is_white) or (y == 1 and not is_white):
-                if board[y + 2 * direction][x] is None:
-                    add_move_if_valid(x, y + 2 * direction)
-        # Diagonal captures
+        if Pion(x, y, x, y + direction, is_white, board):
+            if board[y + direction][x] is None:
+                add_move_if_valid(x, y + direction)
+                if (y == 6 and is_white) or (y == 1 and not is_white):
+                    if board[y + 2 * direction][x] is None:
+                        add_move_if_valid(x, y + 2 * direction)
         for dx in [-1, 1]:
-            if 0 <= x + dx < 8:
-                target = board[y + direction][x + dx]
-                if target and ((is_white and target in pieces_of_black) or (not is_white and target in pieces_of_white)):
-                    add_move_if_valid(x + dx, y + direction)
+            if 0 <= x + dx < 8 and board[y + direction][x + dx] is not None:
+                add_move_if_valid(x + dx, y + direction)
 
-    # Logic for other pieces remains similar but refactored as needed.
+    if piece == pieces_of_white[2] or piece == pieces_of_black[2]:  # Knight
+        knight_moves = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+        for dx, dy in knight_moves:
+            if Knight(x, y, x + dx, y + dy):
+                add_move_if_valid(x + dx, y + dy)
+
+    if piece == pieces_of_white[0] or piece == pieces_of_black[0]:  # Bishop
+        for i in range(1, 8):
+            if Bishop(x, y, x + i, y + i) and NotBlocked(x, y, x + i, y + i, board):
+                add_move_if_valid(x + i, y + i)
+            else:
+                break
+        for i in range(1, 8):
+            if Bishop(x, y, x - i, y + i) and NotBlocked(x, y, x - i, y + i, board):
+                add_move_if_valid(x - i, y + i)
+            else:
+                break
+        for i in range(1, 8):
+            if Bishop(x, y, x + i, y - i) and NotBlocked(x, y, x + i, y - i, board):
+                add_move_if_valid(x + i, y - i)
+            else:
+                break
+        for i in range(1, 8):
+            if Bishop(x, y, x - i, y - i) and NotBlocked(x, y, x - i, y - i, board):
+                add_move_if_valid(x - i, y - i)
+            else:
+                break
+
+    if piece == pieces_of_white[5] or piece == pieces_of_black[5]:  # Rook
+        for i in range(1, 8):
+            if Rook(x, y, x + i, y) and NotBlocked(x, y, x + i, y, board):
+                add_move_if_valid(x + i, y)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x - i, y) and NotBlocked(x, y, x - i, y, board):
+                add_move_if_valid(x - i, y)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x, y + i) and NotBlocked(x, y, x, y + i, board):
+                add_move_if_valid(x, y + i)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x, y - i) and NotBlocked(x, y, x, y - i, board):
+                add_move_if_valid(x, y - i)
+            else:
+                break
+
+    if piece == pieces_of_white[4] or piece == pieces_of_black[4]:  # Queen
+        for i in range(1, 8):
+            if Bishop(x, y, x + i, y + i) and NotBlocked(x, y, x + i, y + i, board):
+                add_move_if_valid(x + i, y + i)
+            else:
+                break
+        for i in range(1, 8):
+            if Bishop(x, y, x - i, y + i) and NotBlocked(x, y, x - i, y + i, board):
+                add_move_if_valid(x - i, y + i)
+            else:
+                break
+        for i in range(1, 8):
+            if Bishop(x, y, x + i, y - i) and NotBlocked(x, y, x + i, y - i, board):
+                add_move_if_valid(x + i, y - i)
+            else:
+                break
+        for i in range(1, 8):
+            if Bishop(x, y, x - i, y - i) and NotBlocked(x, y, x - i, y - i, board):
+                add_move_if_valid(x - i, y - i)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x + i, y) and NotBlocked(x, y, x + i, y, board):
+                add_move_if_valid(x + i, y)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x - i, y) and NotBlocked(x, y, x - i, y, board):
+                add_move_if_valid(x - i, y)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x, y + i) and NotBlocked(x, y, x, y + i, board):
+                add_move_if_valid(x, y + i)
+            else:
+                break
+        for i in range(1, 8):
+            if Rook(x, y, x, y - i) and NotBlocked(x, y, x, y - i, board):
+                add_move_if_valid(x, y - i)
+            else:
+                break
+
+    if piece == pieces_of_white[1] or piece == pieces_of_black[1]:  # King
+        king_moves = [(1, 1), (1, 0), (1, -1), (0, 1), (0, -1), (-1, 1), (-1, 0), (-1, -1)]
+        for dx, dy in king_moves:
+            if King(x, y, x + dx, y + dy, is_white, False, board):
+                add_move_if_valid(x + dx, y + dy)
 
     return possible_moves
 def is_stalemate(board, is_white):
